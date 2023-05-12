@@ -2,9 +2,42 @@ import * as d3 from "d3";
 
 
 // Task 1 your solution here
+let dataset = [];
+let datasetPromise = d3.csv("Spotify_Music_Data.csv").then((response) => {
+    return response;
+    });
 
+const getDataset = () => {
+    return datasetPromise.then((content) => {
+        for (let entry of content) {
+            dataset.push(entry)
+        }
+    });
+};
 
-// Parent HTML element that contains the labels and the plots
+getDataset()
+
+const colours = ["#6e40aa","#963db3","#bf3caf","#e4419d","#fe4b83","#ff5e63","#ff7847","#fb9633","#e2b72f","#c6d63c","#aff05b"];
+
+function idkBro() {
+    const testSentence = "What the fuck is going on".split(" ");
+    let testDiv = document.getElementById("test-div");
+
+    for (let i = 0; i <= testSentence.length - 1; ++i) {
+        let colour = colours[(i % colours.length + colours.length) % colours.length];
+        let p = document.createElement("p");
+        let span = document.createElement("span");
+        p.setAttribute("style", "font-family:sans-serif;color:white;font-weight:bold;line-height:1.8em;");
+        span.setAttribute("style", `background:${colour};padding:5px;`);
+        span.innerText = `${testSentence[i]}`;
+        p.appendChild(span);
+        testDiv.appendChild(p);
+    }
+}
+
+idkBro();
+
+/*// Parent HTML element that contains the labels and the plots
 const parent = d3.select("div#visualization");
 
 // Sizes of the plots
@@ -20,21 +53,21 @@ createScatterPlotMatrix(width, height);
 createHorizontalParallelCoordinates(width, height / 2);
 
 
-/**
+/!**
  * Task 2
- */
+ *!/
 function createLabel() {
     // Add your solution here
 }
 
 
-/**
+/!**
  * Create Scatter Plot Matrix with the given width and height. The contents of each cell
  * in this matrix is defined by the scatterPlot() function.
  *
  * @param {integer} width
  * @param {integer} height
- */
+ *!/
 function createScatterPlotMatrix(width, height) {
 
     const margin = { top: 10, left: 20, bottom: 20, right: 10 };
@@ -74,7 +107,7 @@ function createScatterPlotMatrix(width, height) {
 }
 
 
-/**
+/!**
  * Task 3
  * @param {string} labelX
  * @param {string} labelY
@@ -82,7 +115,7 @@ function createScatterPlotMatrix(width, height) {
  * @param {integer} width
  * @param {integer} height
  * @param {Object} margin
- */
+ *!/
 function scatterPlot(labelX, labelY, scatterplotCell, width, height, margin) {
 
     // Add your solution here
@@ -118,11 +151,11 @@ function scatterPlot(labelX, labelY, scatterplotCell, width, height, margin) {
 }
 
 
-/**
+/!**
  * Task4
  * @param {integer} width
  * @param {integer} height
- */
+ *!/
 
 function createHorizontalParallelCoordinates(width, height) {
 
@@ -149,6 +182,6 @@ function createHorizontalParallelCoordinates(width, height) {
 
 
     }
-}
+}*/
 
 
