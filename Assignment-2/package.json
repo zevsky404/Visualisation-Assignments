@@ -11,8 +11,8 @@
   "license": "ISC",
   "dependencies": {
     "d3": "^7.4.4",
+    "numerics": "^0.8.1",
     "snowpack": "^3.8.8"
   },
-  "devDependencies": {},
   "description": ""
 }
