@@ -2,30 +2,33 @@ import * as d3 from "d3";
 //import numerics from "numerics";
 
 // cyclic access: let colour = colours[(i % colours.length + colours.length) % colours.length];
-const colours = d3.schemeSet3;
+let years = new Set();
+let filteredDataset = [];
+const colours = d3.scaleOrdinal()
+    .domain(years)
+    .range(["#23171b","#4860e6","#2aabee","#2ee5ae","#6afd6a","#c0ee3d","#feb927","#fe6e1a","#c2270a","#900c00"]);
 
 // Task 1 your solution here
 let readFile = d3.csv("Spotify_Music_Data.csv").then((response) => {
     return response;
     });
 
-let years = new Set();
-let filteredDataset = [];
-function filterDataset() {
-    readFile.then((content) => {
-        for (const entry of content) {
-            years.add(entry.year);
-        }
-        for (const entry of content) {
-            filteredDataset.push({"title":entry.title, "year":entry.year, "bpm":entry["tempo (bpm)"],
-                "energy":entry.energy, "duration":entry["duration (s)"]});
-        }
-    });
-}
+
+readFile.then((content) => {
+    for (const entry of content) {
+        years.add(entry.year);
+    }
+    for (const entry of content) {
+        filteredDataset.push({"title":entry.title, "year":entry.year, "bpm":entry["tempo (bpm)"],
+            "energy":entry.energy, "duration":entry["duration (s)"]});
+    }
+});
 
 
 // Parent HTML element that contains the labels and the plots
 const parent = d3.select("div#visualization");
+const drawArea = d3.select("svg#draw-area");
+
 
 // Sizes of the plots
 const width = 800;
@@ -34,17 +37,40 @@ const height = 800;
 // Set of selected items within the brush
 const selectedItems = new Set();
 
-
 createLabel();
 createScatterPlotMatrix(width, height);
 createHorizontalParallelCoordinates(width, height / 2);
+
 
 
 /**
  * Task 2
  */
 function createLabel() {
-    // Add your solution here
+    const xValue = 800;
+    readFile.then(() => {
+        let test = drawArea.selectAll("colour-dots")
+            .data(years)
+            .enter()
+            .append("circle")
+            .attr("cx", xValue)
+            .attr("cy", (d, i) => { return 100 + i * 25; })
+            .attr("r", 7)
+            .style("fill", (d) => { return colours(d); });
+
+        console.log("Elements in the enter selection: " + test.nodes().length);
+
+        drawArea.selectAll("labels")
+            .data(years)
+            .enter()
+            .append("text")
+            .attr("x", xValue + 20)
+            .attr("y", (d, i) => { return 100 + i * 25; })
+            .style("fill", (d) => { return colours(d); })
+            .text((d) => { return d; })
+            .attr("text-anchor", "left")
+            .style("alignment-baseline", "middle");
+    })
 }
 
 
@@ -52,8 +78,8 @@ function createLabel() {
  * Create Scatter Plot Matrix with the given width and height. The contents of each cell
  * in this matrix is defined by the scatterPlot() function.
  *
- * @param {integer} width
- * @param {integer} height
+ * @param {number} width
+ * @param {number} height
  */
 function createScatterPlotMatrix(width, height) {
 
@@ -99,8 +125,8 @@ function createScatterPlotMatrix(width, height) {
  * @param {string} labelX
  * @param {string} labelY
  * @param {nodeElement} scatterplotCell
- * @param {integer} width
- * @param {integer} height
+ * @param {number} width
+ * @param {number} height
  * @param {Object} margin
  */
 function scatterPlot(labelX, labelY, scatterplotCell, width, height, margin) {
@@ -140,8 +166,8 @@ function scatterPlot(labelX, labelY, scatterplotCell, width, height, margin) {
 
 /**
  * Task4
- * @param {integer} width
- * @param {integer} height
+ * @param {number} width
+ * @param {number} height
  */
 
 function createHorizontalParallelCoordinates(width, height) {
