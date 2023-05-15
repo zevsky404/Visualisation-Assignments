@@ -83,7 +83,7 @@ function createScatterPlotMatrix(width, height) {
     readFile.then(() => {
         const numerics = ["bpm", "energy", "duration"];
 
-        const margin = { top: 10, left: 20, bottom: 20, right: 10 };
+        const margin = { top: 20, left: 30, bottom: 20, right: 30 };
 
         const grid_height = height / numerics.length;
         const grid_width = width / numerics.length;
@@ -149,21 +149,24 @@ function scatterPlot(labelX, labelY, scatterplotCell, width, height, margin) {
 
         if (labelX !== labelY) {
             let xAxis = d3.scaleLinear()
-                .domain(xValues.sort())
+                .domain([0, width - margin.right])
                 .range([0, width - margin.right]);
             scatterplotCell
                 .append("g")
-                .attr("transform", "translate(0, " + axisXHeight + ")")
+                .attr("class", "x-axis")
+                .attr("transform", "translate(" + margin.left + ", " + axisXHeight + ")")
                 .call(d3.axisBottom(xAxis));
 
             let yAxis = d3.scaleLinear()
-                .domain(yValues.sort())
+                .domain([margin.top, height - margin.bottom])
                 .range([height - margin.bottom, margin.top]);
             scatterplotCell
                 .append("g")
+                .attr("class", "y-axis")
+                .attr("transform", "translate(" + margin.left + ", 0)")
                 .call(d3.axisLeft(yAxis));
 
-            console.log(yAxis.domain())
+            console.log(yAxis.range())
         }
 
 
