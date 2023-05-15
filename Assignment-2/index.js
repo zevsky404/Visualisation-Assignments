@@ -4,15 +4,23 @@ import * as d3 from "d3";
 // cyclic access: let colour = colours[(i % colours.length + colours.length) % colours.length];
 let years = new Set();
 let filteredDataset = [];
+
 const colours = d3.scaleOrdinal()
     .domain(years)
     .range(["#23171b","#4860e6","#2aabee","#2ee5ae","#6afd6a","#c0ee3d","#feb927","#fe6e1a","#c2270a","#900c00"]);
 
 // Task 1 your solution here
+// read in file
 let readFile = d3.csv("Spotify_Music_Data.csv").then((response) => {
     return response;
     });
 
+
+/**
+ * filter dataset
+ * years: set, receives all unique years from the dataset (2010 - 2019)
+ * filteredDataset: array of JSONs, where each line is: {"title": title, "year": 201x, "bpm": 197, "energy": 5, "duration": 130}
+ */
 readFile.then((content) => {
     for (const entry of content) {
         years.add(entry.year);
@@ -25,6 +33,7 @@ readFile.then((content) => {
 
 
 // Parent HTML element that contains the labels and the plots
+// own svg for legend
 const parent = d3.select("div#visualization");
 const legendArea = d3.select("svg#draw-area");
 
@@ -121,23 +130,24 @@ function createScatterPlotMatrix(width, height) {
 
 
 /**
- * Task 3
- * @param {string} labelX
- * @param {string} labelY
- * @param {nodeElement} scatterplotCell
- * @param {number} width
- * @param {number} height
- * @param {Object} margin
+ * creates a scatter plot in each cell
+ * bpm x bpm, bpm x energy, bpm x duration
+ * energy x bpm, energy x energy, energy x duration
+ * duration x bpm, energy x duration, duration x duration
+ * @param {string} labelX label for x axis
+ * @param {string} labelY label for y axis
+ * @param {nodeElement} scatterplotCell current cell in which plot is drawn
+ * @param {number} width width of the cell
+ * @param {number} height height of the cell
+ * @param {Object} margin margin object, which stores all four margins (top, left, bottom, right)
  */
 function scatterPlot(labelX, labelY, scatterplotCell, width, height, margin) {
     readFile.then(() => {
+        // empty arrays for values
         let xValues = [];
         let yValues = [];
 
-        const axisXHeight = height - margin.bottom;
-        const axisYWidth = width - margin.right;
-        console.log(axisXHeight + ", " + axisYWidth)
-
+        // fill x and y values into arrays
         for (const entry of filteredDataset) {
             xValues.push(entry[`${labelX}`]);
         }
@@ -153,7 +163,7 @@ function scatterPlot(labelX, labelY, scatterplotCell, width, height, margin) {
             scatterplotCell
                 .append("g")
                 .attr("class", `x-axis-${labelX}`)
-                .attr("transform", "translate(" + margin.left + ", " + axisXHeight + ")")
+                .attr("transform", "translate(" + margin.left + ", " + height - margin.bottom + ")")
                 .call(d3.axisBottom(xAxis));
 
             let yAxis = d3.scaleLinear()
