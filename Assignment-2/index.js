@@ -19,15 +19,15 @@ readFile.then((content) => {
         years.add(entry.year);
     }
     for (const entry of content) {
-        filteredDataset.push({"title":entry.title, "year":entry.year, "bpm":entry["tempo (bpm)"],
-            "energy":entry.energy, "duration":entry["duration (s)"]});
+        filteredDataset.push({"title":entry.title, "year":entry.year, "bpm":parseInt(entry["tempo (bpm)"]),
+            "energy":parseInt(entry.energy), "duration":parseInt(entry["duration (s)"])});
     }
 });
 
 
 // Parent HTML element that contains the labels and the plots
 const parent = d3.select("div#visualization");
-const drawArea = d3.select("svg#draw-area");
+const legendArea = d3.select("svg#draw-area");
 
 
 // Sizes of the plots
@@ -44,12 +44,12 @@ createHorizontalParallelCoordinates(width, height / 2);
 
 
 /**
- * Task 2
+ * creates legend with a colour dot for each label using enter function
  */
 function createLabel() {
     const xValue = 800;
     readFile.then(() => {
-        let test = drawArea.selectAll("colour-dots")
+        legendArea.selectAll("colour-dots")
             .data(years)
             .enter()
             .append("circle")
@@ -58,9 +58,7 @@ function createLabel() {
             .attr("r", 7)
             .style("fill", (d) => { return colours(d); });
 
-        console.log("Elements in the enter selection: " + test.nodes().length);
-
-        drawArea.selectAll("labels")
+        legendArea.selectAll("labels")
             .data(years)
             .enter()
             .append("text")
@@ -82,40 +80,43 @@ function createLabel() {
  * @param {number} height
  */
 function createScatterPlotMatrix(width, height) {
+    readFile.then(() => {
+        const numerics = ["bpm", "energy", "duration"];
 
-    const margin = { top: 10, left: 20, bottom: 20, right: 10 };
+        const margin = { top: 10, left: 20, bottom: 20, right: 10 };
 
-    const grid_height = height / numerics.length;
-    const grid_width = width / numerics.length;
-    const fontSize = 10;
+        const grid_height = height / numerics.length;
+        const grid_width = width / numerics.length;
+        const fontSize = 20;
 
-    const svg = parent.append("svg")
-        .attr("viewBox", [0, 0, width, height]);
+        const svg = parent.append("svg")
+            .attr("viewBox", [0, 0, width, height]);
 
-    const scatterplot_matrix = svg.selectAll("g.scatterplot")
-        .data(d3.cross(numerics, numerics))
-        .join("g")
-        .attr("transform", (d, i) => "translate(" + (i % numerics.length) * grid_width + "," + Math.floor(i / numerics.length) * grid_height + ")");
+        const scatterplot_matrix = svg.selectAll("g.scatterplot")
+            .data(d3.cross(numerics, numerics))
+            .join("g")
+            .attr("transform", (d, i) => "translate(" + (i % numerics.length) * grid_width + "," + Math.floor(i / numerics.length) * grid_height + ")");
 
-    scatterplot_matrix.each(function (d) { // each pair from cross combination
-        const g = d3.select(this);
+        scatterplot_matrix.each(function (d) { // each pair from cross combination
+            const g = d3.select(this);
 
-        scatterPlot(d[0], d[1], g, grid_width, grid_height, margin);
+            scatterPlot(d[0], d[1], g, grid_width, grid_height, margin);
 
+            const labelXPosition = (grid_width - margin.right - margin.left) / 2 + margin.left;
+            const labelYPosition = 10;
 
-        const labelXPosition = (grid_width - margin.right - margin.left) / 2 + margin.left;
-        const labelYPosition = 10;
+            // label the same attribute axis
+            if (d[0] === d[1]) {
+                g.append("text")
+                    .text(d[0])
+                    .attr("transform", "translate(" + labelXPosition + "," + labelYPosition + ")")
+                    .attr("y", labelYPosition + 100)
+                    .style("text-anchor", "middle")
+                    .style("fill", "black")
+                    .style("font-size", fontSize);
 
-        // label the same attribute axis
-        if (d[0] === d[1]) {
-            g.append("text")
-                .text(d[0])
-                .attr("transform", "translate(" + labelXPosition + "," + labelYPosition + ")")
-                .style("text-anchor", "middle")
-                .style("fill", "black")
-                .style("font-size", fontSize);
-
-        }
+            }
+        })
     })
 }
 
@@ -130,36 +131,71 @@ function createScatterPlotMatrix(width, height) {
  * @param {Object} margin
  */
 function scatterPlot(labelX, labelY, scatterplotCell, width, height, margin) {
+    readFile.then(() => {
+        let xValues = [];
+        let yValues = [];
 
-    // Add your solution here
+        const axisXHeight = height - margin.bottom;
+        const axisYWidth = width - margin.right;
+        console.log(axisXHeight + ", " + axisYWidth)
 
-    const brush = d3.brush()
-        .extent([
-            [margin.left, margin.top],
-            [axisYwidth, axisXheight]
-        ])
-        .on("end", brushed); // for simplifiying the matter we do it only at the end.
+        for (const entry of filteredDataset) {
+            xValues.push(entry[`${labelX}`]);
+        }
 
-    scatterplotCell.call(brush);
+        for (const entry of filteredDataset) {
+            yValues.push(entry[`${labelY}`]);
+        }
+
+        if (labelX !== labelY) {
+            let xAxis = d3.scaleLinear()
+                .domain(xValues.sort())
+                .range([0, width - margin.right]);
+            scatterplotCell
+                .append("g")
+                .attr("transform", "translate(0, " + axisXHeight + ")")
+                .call(d3.axisBottom(xAxis));
+
+            let yAxis = d3.scaleLinear()
+                .domain(yValues.sort())
+                .range([height - margin.bottom, margin.top]);
+            scatterplotCell
+                .append("g")
+                .call(d3.axisLeft(yAxis));
+
+            console.log(yAxis.domain())
+        }
 
 
-    function brushed(brushEvent) {
 
-        const selection = brushEvent.selection
-        const scatterPLotD3 = d3.select(this) //  this always refers to the current plot
+        const brush = d3.brush()
+            .extent([
+                [margin.left, margin.top],
+                [axisYWidth, axisXHeight]
+            ])
+            .on("end", brushed); // for simplifiying the matter we do it only at the end.
+
+        scatterplotCell.call(brush);
 
 
-        // Add solution here
+        function brushed(brushEvent) {
 
-    }
+            const selection = brushEvent.selection
+            const scatterPLotD3 = d3.select(this) //  this always refers to the current plot
 
-    // A function that return TRUE or FALSE according if a dot is in the selection or not
-    function isInsideBrush(brush_coords, cx, cy) {
-        if (brush_coords)
-            return brush_coords[0][0] <= cx && cx <= brush_coords[1][0] && brush_coords[0][1] <= cy && cy <= brush_coords[1][1];    // This return TRUE or FALSE depending on if the points
-        else
-            return false;
-    }
+
+            // Add solution here
+
+        }
+
+        // A function that return TRUE or FALSE according if a dot is in the selection or not
+        function isInsideBrush(brush_coords, cx, cy) {
+            if (brush_coords)
+                return brush_coords[0][0] <= cx && cx <= brush_coords[1][0] && brush_coords[0][1] <= cy && cy <= brush_coords[1][1];    // This return TRUE or FALSE depending on if the points
+            else
+                return false;
+        }
+    })
 
 }
 
