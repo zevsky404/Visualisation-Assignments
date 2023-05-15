@@ -153,7 +153,7 @@ function scatterPlot(labelX, labelY, scatterplotCell, width, height, margin) {
                 .range([0, width - margin.right]);
             scatterplotCell
                 .append("g")
-                .attr("class", "x-axis")
+                .attr("class", `x-axis-${labelX}`)
                 .attr("transform", "translate(" + margin.left + ", " + axisXHeight + ")")
                 .call(d3.axisBottom(xAxis));
 
@@ -162,7 +162,7 @@ function scatterPlot(labelX, labelY, scatterplotCell, width, height, margin) {
                 .range([height - margin.bottom, margin.top]);
             scatterplotCell
                 .append("g")
-                .attr("class", "y-axis")
+                .attr("class", `y-axis-${labelY}`)
                 .attr("transform", "translate(" + margin.left + ", 0)")
                 .call(d3.axisLeft(yAxis));
 
