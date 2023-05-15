@@ -95,7 +95,7 @@ function createScatterPlotMatrix(width, height) {
 
         const grid_height = height / numerics.length;
         const grid_width = width / numerics.length;
-        const fontSize = 20;
+        const fontSize = 10;
 
         const svg = parent.append("svg")
             .attr("viewBox", [0, 0, width, height]);
@@ -103,22 +103,24 @@ function createScatterPlotMatrix(width, height) {
         const scatterplot_matrix = svg.selectAll("g.scatterplot")
             .data(d3.cross(numerics, numerics))
             .join("g")
-            .attr("transform", (d, i) => "translate(" + (i % numerics.length) * grid_width + "," + Math.floor(i / numerics.length) * grid_height + ")");
+            .attr("transform", (d, i) => "translate(" + (i % numerics.length) * grid_width + "," + Math.floor(i / numerics.length) * grid_height + ")")
+            .attr("class", "scatterplot-cell");
+
 
         scatterplot_matrix.each(function (d) { // each pair from cross combination
-            const g = d3.select(this);
+            const cell = d3.select(this);
 
-            scatterPlot(d[0], d[1], g, grid_width, grid_height, margin);
+            scatterPlot(d[0], d[1], cell, grid_width, grid_height, margin);
 
             const labelXPosition = (grid_width - margin.right - margin.left) / 2 + margin.left;
             const labelYPosition = 10;
 
             // label the same attribute axis
             if (d[0] === d[1]) {
-                g.append("text")
+                cell.append("text")
                     .text(d[0])
                     .attr("transform", "translate(" + labelXPosition + "," + labelYPosition + ")")
-                    .attr("y", labelYPosition + 100)
+                    .attr("y", labelYPosition)
                     .style("text-anchor", "middle")
                     .style("fill", "black")
                     .style("font-size", fontSize);
@@ -156,26 +158,35 @@ function scatterPlot(labelX, labelY, scatterplotCell, width, height, margin) {
             yValues.push(entry[`${labelY}`]);
         }
 
-        if (labelX !== labelY) {
-            let xAxis = d3.scaleLinear()
-                .domain(d3.extent(xValues))
-                .range([0, width - margin.right]);
-            scatterplotCell
-                .append("g")
-                .attr("class", `x-axis-${labelX}`)
-                .attr("transform", "translate(" + margin.left + ", " + height - margin.bottom + ")")
-                .call(d3.axisBottom(xAxis));
+        // scale x axis
+        let xScaling = d3.scaleLinear()
+            .domain(d3.extent(xValues))
+            .range([0, width - margin.right - 10]);
 
-            let yAxis = d3.scaleLinear()
-                .domain(d3.extent(yValues))
-                .range([height - margin.bottom, margin.top]);
-            scatterplotCell
-                .append("g")
-                .attr("class", `y-axis-${labelY}`)
-                .attr("transform", "translate(" + margin.left + ", 0)")
-                .call(d3.axisLeft(yAxis));
+        let xAxis = d3.axisBottom().scale(xScaling).ticks(5)
 
-        }
+        // draw axis in scatter plot cell using that scaling
+        scatterplotCell
+            .append("g")
+            .attr("class", `x-axis-${labelX}`)
+            .attr("transform", `translate(${margin.left}, ${height - margin.bottom})`)
+            .call(xAxis);
+
+        // scale y axis
+        let yScaling = d3.scaleLinear()
+            .domain(d3.extent(yValues))
+            .range([height - margin.bottom, margin.top]);
+
+        let yAxis = d3.axisLeft().scale(yScaling).ticks(5)
+
+        // draw axis in scatter plot cell using that scaling
+        scatterplotCell
+            .append("g")
+            .attr("class", `y-axis-${labelY}`)
+            .attr("transform", `translate(${margin.left}, 0)`)
+            .call(yAxis);
+
+        scatterplotCell
 
 
         const brush = d3.brush()
