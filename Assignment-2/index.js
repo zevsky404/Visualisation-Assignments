@@ -13,7 +13,6 @@ let readFile = d3.csv("Spotify_Music_Data.csv").then((response) => {
     return response;
     });
 
-
 readFile.then((content) => {
     for (const entry of content) {
         years.add(entry.year);
@@ -149,7 +148,7 @@ function scatterPlot(labelX, labelY, scatterplotCell, width, height, margin) {
 
         if (labelX !== labelY) {
             let xAxis = d3.scaleLinear()
-                .domain([0, width - margin.right])
+                .domain(d3.extent(xValues))
                 .range([0, width - margin.right]);
             scatterplotCell
                 .append("g")
@@ -158,7 +157,7 @@ function scatterPlot(labelX, labelY, scatterplotCell, width, height, margin) {
                 .call(d3.axisBottom(xAxis));
 
             let yAxis = d3.scaleLinear()
-                .domain([margin.top, height - margin.bottom])
+                .domain(d3.extent(yValues))
                 .range([height - margin.bottom, margin.top]);
             scatterplotCell
                 .append("g")
@@ -166,9 +165,7 @@ function scatterPlot(labelX, labelY, scatterplotCell, width, height, margin) {
                 .attr("transform", "translate(" + margin.left + ", 0)")
                 .call(d3.axisLeft(yAxis));
 
-            console.log(yAxis.range())
         }
-
 
 
         const brush = d3.brush()
