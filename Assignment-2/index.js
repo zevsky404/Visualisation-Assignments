@@ -29,6 +29,13 @@ readFile.then((content) => {
         filteredDataset.push({"title":entry.title, "year":entry.year, "bpm":parseInt(entry["tempo (bpm)"]),
             "energy":parseInt(entry.energy), "duration":parseInt(entry["duration (s)"])});
     }
+    filteredDataset.filter((value, index, array) => {
+        if (array[index].bpm === 0 || array[index].energy === 0 || array[index].duration === 0) {
+            array.splice(index, 1);
+            return true;
+        }
+        return false;
+    });
 });
 
 
@@ -41,6 +48,9 @@ const legendArea = d3.select("svg#draw-area");
 // Sizes of the plots
 const width = 800;
 const height = 800;
+
+const numericalAttributes = ["bpm", "energy", "duration"];
+const margin = { top: 20, left: 30, bottom: 20, right: 30 };
 
 // Set of selected items within the brush
 const selectedItems = new Set();
@@ -61,21 +71,21 @@ function createLabel() {
             .data(years)
             .enter()
             .append("circle")
-            .attr("cx", xValue)
-            .attr("cy", (d, i) => { return 100 + i * 25; })
-            .attr("r", 7)
-            .style("fill", (d) => { return colours(d); });
+                .attr("cx", xValue)
+                .attr("cy", (d, i) => { return 100 + i * 25; })
+                .attr("r", 7)
+                .style("fill", (d) => { return colours(d); });
 
         legendArea.selectAll("labels")
             .data(years)
             .enter()
             .append("text")
-            .attr("x", xValue + 20)
-            .attr("y", (d, i) => { return 100 + i * 25; })
-            .style("fill", (d) => { return colours(d); })
-            .text((d) => { return d; })
-            .attr("text-anchor", "left")
-            .style("alignment-baseline", "middle");
+                .attr("x", xValue + 20)
+                .attr("y", (d, i) => { return 100 + i * 25; })
+                .style("fill", (d) => { return colours(d); })
+                .text((d) => { return d; })
+                .attr("text-anchor", "left")
+                .style("alignment-baseline", "middle");
     })
 }
 
@@ -89,21 +99,18 @@ function createLabel() {
  */
 function createScatterPlotMatrix(width, height) {
     readFile.then(() => {
-        const numerics = ["bpm", "energy", "duration"];
-
-        const margin = { top: 20, left: 30, bottom: 20, right: 30 };
-
-        const grid_height = height / numerics.length;
-        const grid_width = width / numerics.length;
-        const fontSize = 10;
+        const grid_height = height / numericalAttributes.length;
+        const grid_width = width / numericalAttributes.length;
+        const fontSize = 15;
 
         const svg = parent.append("svg")
+            .attr("id", "scatter-plot")
             .attr("viewBox", [0, 0, width, height]);
 
         const scatterplot_matrix = svg.selectAll("g.scatterplot")
-            .data(d3.cross(numerics, numerics))
+            .data(d3.cross(numericalAttributes, numericalAttributes))
             .join("g")
-            .attr("transform", (d, i) => "translate(" + (i % numerics.length) * grid_width + "," + Math.floor(i / numerics.length) * grid_height + ")")
+            .attr("transform", (d, i) => "translate(" + (i % numericalAttributes.length) * grid_width + "," + Math.floor(i / numericalAttributes.length) * grid_height + ")")
             .attr("class", "scatterplot-cell");
 
 
@@ -119,11 +126,11 @@ function createScatterPlotMatrix(width, height) {
             if (d[0] === d[1]) {
                 cell.append("text")
                     .text(d[0])
-                    .attr("transform", "translate(" + labelXPosition + "," + labelYPosition + ")")
-                    .attr("y", labelYPosition)
-                    .style("text-anchor", "middle")
-                    .style("fill", "black")
-                    .style("font-size", fontSize);
+                        .attr("transform", "translate(" + labelXPosition + "," + labelYPosition + ")")
+                        .attr("y", labelYPosition)
+                        .style("text-anchor", "middle")
+                        .style("fill", "black")
+                        .style("font-size", fontSize);
 
             }
         })
@@ -136,8 +143,8 @@ function createScatterPlotMatrix(width, height) {
  * bpm x bpm, bpm x energy, bpm x duration
  * energy x bpm, energy x energy, energy x duration
  * duration x bpm, energy x duration, duration x duration
- * @param {string} labelX label for x axis
- * @param {string} labelY label for y axis
+ * @param {string} labelX label for x-axis
+ * @param {string} labelY label for y-axis
  * @param {nodeElement} scatterplotCell current cell in which plot is drawn
  * @param {number} width width of the cell
  * @param {number} height height of the cell
@@ -163,7 +170,7 @@ function scatterPlot(labelX, labelY, scatterplotCell, width, height, margin) {
             .domain(d3.extent(xValues))
             .range([0, width - margin.right - 10]);
 
-        let xAxis = d3.axisBottom().scale(xScaling).ticks(5)
+        let xAxis = d3.axisBottom().scale(xScaling).ticks(7)
 
         // draw axis in scatter plot cell using that scaling
         scatterplotCell
@@ -177,7 +184,7 @@ function scatterPlot(labelX, labelY, scatterplotCell, width, height, margin) {
             .domain(d3.extent(yValues))
             .range([height - margin.bottom, margin.top]);
 
-        let yAxis = d3.axisLeft().scale(yScaling).ticks(5)
+        let yAxis = d3.axisLeft().scale(yScaling).ticks(7)
 
         // draw axis in scatter plot cell using that scaling
         scatterplotCell
@@ -186,7 +193,15 @@ function scatterPlot(labelX, labelY, scatterplotCell, width, height, margin) {
             .attr("transform", `translate(${margin.left}, 0)`)
             .call(yAxis);
 
-        scatterplotCell
+        scatterplotCell.selectAll("data-points")
+            .data(filteredDataset)
+            .enter()
+            .append("circle")
+                .attr("cx", (data) => { return xScaling(data[`${labelX}`]) + margin.left; })
+                .attr("cy", (data) => { return yScaling(data[`${labelY}`]); })
+                .attr("r", 2)
+                .style("fill", (data) => {return colours(data.year)});
+
 
 
         const brush = d3.brush()
@@ -228,8 +243,24 @@ function scatterPlot(labelX, labelY, scatterplotCell, width, height, margin) {
  */
 
 function createHorizontalParallelCoordinates(width, height) {
+    // creates new svg for parallel coordinates plot
+    const svg = parent.append("svg")
+        .attr("id", "parallel-coordinates-plot")
+        .attr("viewBox", [0, 0, width, height])
 
-    // Add your solution here
+    // creates object, where each numerical attribute (y-axis) receives a scale
+    let yAxesScaling = {};
+    for (const attribute of numericalAttributes) {
+        const label = attribute;
+        yAxesScaling[label] = d3.scaleLinear()
+            .domain(d3.extent(filteredDataset[`${attribute}`]))
+            .range([height, 0])
+    }
+
+    // scale x-axis so that the three y-axes are distributed along it
+    let xScaling = d3.scalePoint()
+        .range([0, width])
+        .domain(numericalAttributes)
 
 
     const brushWidth = 10;
