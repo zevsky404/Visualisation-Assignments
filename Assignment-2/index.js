@@ -200,7 +200,7 @@ function scatterPlot(labelX, labelY, scatterplotCell, width, height, margin) {
                 .attr("cx", (data) => { return xScaling(data[`${labelX}`]) + margin.left; })
                 .attr("cy", (data) => { return yScaling(data[`${labelY}`]); })
                 .attr("r", 2)
-                .style("fill", (data) => {return colours(data.year)});
+                .style("fill", (data) => { return colours(data.year); });
 
 
 
@@ -243,46 +243,80 @@ function scatterPlot(labelX, labelY, scatterplotCell, width, height, margin) {
  */
 
 function createHorizontalParallelCoordinates(width, height) {
-    // creates new svg for parallel coordinates plot
-    const svg = parent.append("svg")
-        .attr("id", "parallel-coordinates-plot")
-        .attr("viewBox", [0, 0, width, height])
+   readFile.then(() => {
+       // creates new svg for parallel coordinates plot
+       const parallelCoordinatesPlot = parent.append("svg")
+           .attr("id", "parallel-coordinates-plot")
+           .attr("viewBox", [0, 0, width, height])
 
-    // creates object, where each numerical attribute (y-axis) receives a scale
-    let yAxesScaling = {};
-    for (const attribute of numericalAttributes) {
-        const label = attribute;
-        yAxesScaling[label] = d3.scaleLinear()
-            .domain(d3.extent(filteredDataset[`${attribute}`]))
-            .range([height, 0])
-    }
+       // creates array of objects, where each numerical attribute (y-axis) receives a scale
+       // {bpm: scale function, energy: scale function, duration: scale function}
+       let yAxesScaling = {};
+       for (const attribute of numericalAttributes) {
+           yAxesScaling[attribute] = d3.scaleLinear()
+               .domain(d3.extent(filteredDataset.map(line => line[`${attribute}`])))
+               .range([height - margin.top, margin.bottom]);
+       }
 
-    // scale x-axis so that the three y-axes are distributed along it
-    let xScaling = d3.scalePoint()
-        .range([0, width])
-        .domain(numericalAttributes)
+       const yAxis = d3.axisLeft().scale(yAxesScaling["bpm"])
+
+       // scale x-axis so that the three y-axes are distributed along it
+       let xScaling = d3.scalePoint()
+           .range([margin.left, width - margin.right])
+           .domain(numericalAttributes)
+
+       const drawPath = (data) => {
+           return d3.line()(numericalAttributes.map((path) => {return [xScaling(path),
+                                                                                        yAxesScaling[path](data[path])];
+           }))
+       }
+
+       parallelCoordinatesPlot.selectAll("data-paths")
+           .data(filteredDataset)
+           .enter()
+           .append("path")
+           .attr("d", drawPath)
+           .style("fill", "none")
+           .style("stroke", (data) => { return colours(data.year); })
+           .style("opacity", 0.7)
+
+       parallelCoordinatesPlot.selectAll("y-axes")
+           .data(numericalAttributes)
+           .enter()
+           .append("g")
+            .attr("class", (data) => { return `y-axis-${data}`; })
+            .attr("transform", (data) => { return `translate (${xScaling(data)}, ${margin.bottom})`; })
+            .each(function (data) { d3.select(this).call(yAxis)})
+           .append("text")
+            .style("text-anchor", "middle")
+            .attr("y", margin.top - 9)
+            .text((data) => { return data; })
+            .style("fill", "black")
 
 
-    const brushWidth = 10;
-    const brush = d3.brushY()
-        .extent([
-            [-brushWidth / 2, margin.top],
-            [brushWidth / 2, height - margin.bottom]
-        ])
-        .on("end", brushed);
-    axes.call(brush);
+
+
+       const brushWidth = 10;
+       const brush = d3.brushY()
+           .extent([
+               [-brushWidth / 2, margin.top],
+               [brushWidth / 2, height - margin.bottom]
+           ])
+           .on("end", brushed);
+       axes.call(brush);
 
 
 
-    function brushed(brushEvent, key) {
+       function brushed(brushEvent, key) {
 
-        const selection = brushEvent.selection
-        const attributeName = key[0]
+           const selection = brushEvent.selection
+           const attributeName = key[0]
 
-        // Add your code here
+           // Add your code here
 
 
-    }
+       }
+   })
 }
 
 
