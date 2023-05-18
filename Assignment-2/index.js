@@ -258,18 +258,16 @@ function createHorizontalParallelCoordinates(width, height) {
                .range([height - margin.top, margin.bottom]);
        }
 
-       const yAxis = d3.axisLeft().scale(yAxesScaling["bpm"])
-
        // scale x-axis so that the three y-axes are distributed along it
        let xScaling = d3.scalePoint()
            .range([margin.left, width - margin.right])
-           .domain(numericalAttributes)
+           .domain(numericalAttributes);
 
        const drawPath = (data) => {
            return d3.line()(numericalAttributes.map((path) => {return [xScaling(path),
                                                                                         yAxesScaling[path](data[path])];
            }))
-       }
+       };
 
        parallelCoordinatesPlot.selectAll("data-paths")
            .data(filteredDataset)
@@ -278,7 +276,7 @@ function createHorizontalParallelCoordinates(width, height) {
            .attr("d", drawPath)
            .style("fill", "none")
            .style("stroke", (data) => { return colours(data.year); })
-           .style("opacity", 0.7)
+           .style("opacity", 0.7);
 
        parallelCoordinatesPlot.selectAll("y-axes")
            .data(numericalAttributes)
@@ -286,14 +284,12 @@ function createHorizontalParallelCoordinates(width, height) {
            .append("g")
             .attr("class", (data) => { return `y-axis-${data}`; })
             .attr("transform", (data) => { return `translate (${xScaling(data)}, ${margin.bottom})`; })
-            .each(function (data) { d3.select(this).call(yAxis)})
+            .each(function (data) { d3.select(this).call(d3.axisLeft().scale(yAxesScaling[data])); })
            .append("text")
             .style("text-anchor", "middle")
             .attr("y", margin.top - 9)
             .text((data) => { return data; })
-            .style("fill", "black")
-
-
+            .style("fill", "black");
 
 
        const brushWidth = 10;
