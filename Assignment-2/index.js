@@ -232,9 +232,7 @@ function scatterPlot(labelX, labelY, scatterplotCell, width, height, margin) {
                 return false;
         }
     })
-
 }
-
 
 /**
  * Task4
@@ -263,12 +261,30 @@ function createHorizontalParallelCoordinates(width, height) {
            .range([margin.left, width - margin.right])
            .domain(numericalAttributes);
 
+       // maps x and y coordinates for each attribute
        const drawPath = (data) => {
-           return d3.line()(numericalAttributes.map((path) => {return [xScaling(path),
-                                                                                        yAxesScaling[path](data[path])];
+           return d3.line()(numericalAttributes.map((attribute) => {
+               return [xScaling(attribute),                 // retrieves x-coordinate for line start from x-scaling
+               yAxesScaling[attribute](data[attribute])];   // retrieves y-coordinate for line start from y-scaling
            }))
        };
 
+       // draws y_axes with the respective label
+       parallelCoordinatesPlot.selectAll("y-axes")
+           .data(numericalAttributes)
+           .enter()
+           .append("g")
+            .attr("class", (data) => { return `y-axis-${data}`; })
+            .attr("transform", (data) => { return `translate (${xScaling(data)}, 0)`; })
+            .each(function (data) { d3.select(this).call(d3.axisLeft().scale(yAxesScaling[data])); })
+           .append("text")
+            .attr("class", (data) => { return `y-label-${data}`; })
+            .attr("y", margin.top - 9)
+            .text((data) => { return data; })
+            .style("text-anchor", "middle")
+            .style("fill", "black");
+
+       // draws lines/paths for each line in the JSON array
        parallelCoordinatesPlot.selectAll("data-paths")
            .data(filteredDataset)
            .enter()
@@ -277,19 +293,6 @@ function createHorizontalParallelCoordinates(width, height) {
            .style("fill", "none")
            .style("stroke", (data) => { return colours(data.year); })
            .style("opacity", 0.7);
-
-       parallelCoordinatesPlot.selectAll("y-axes")
-           .data(numericalAttributes)
-           .enter()
-           .append("g")
-            .attr("class", (data) => { return `y-axis-${data}`; })
-            .attr("transform", (data) => { return `translate (${xScaling(data)}, ${margin.bottom})`; })
-            .each(function (data) { d3.select(this).call(d3.axisLeft().scale(yAxesScaling[data])); })
-           .append("text")
-            .style("text-anchor", "middle")
-            .attr("y", margin.top - 9)
-            .text((data) => { return data; })
-            .style("fill", "black");
 
 
        const brushWidth = 10;
