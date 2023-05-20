@@ -107,3 +107,7 @@ span.monospace {
   width: 100%;
   height: auto;
 }
+
+.highlighted-data-point {
+  fill: ;
+}

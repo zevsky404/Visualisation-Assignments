@@ -1,20 +1,28 @@
 import * as d3 from "d3";
-//import numerics from "numerics";
 
-// cyclic access: let colour = colours[(i % colours.length + colours.length) % colours.length];
 let years = new Set();
 let filteredDataset = [];
 
+const colourScheme = ["#23171b","#4860e6","#2aabee","#2ee5ae","#6afd6a","#c0ee3d","#feb927","#fe6e1a","#c2270a","#900c00"]
+
 const colours = d3.scaleOrdinal()
     .domain(years)
-    .range(["#23171b","#4860e6","#2aabee","#2ee5ae","#6afd6a","#c0ee3d","#feb927","#fe6e1a","#c2270a","#900c00"]);
+    .range(colourScheme);
+
+let newColourScheme = [];
+for (const colour of colourScheme) {
+    newColourScheme.push(d3.rgb(colour).darker(0.5).toString());
+}
+
+const desaturatedColours = d3.scaleOrdinal()
+    .domain(years)
+    .range(newColourScheme);
 
 // Task 1 your solution here
 // read in file
 let readFile = d3.csv("Spotify_Music_Data.csv").then((response) => {
     return response;
     });
-
 
 /**
  * filter dataset
@@ -58,8 +66,6 @@ const selectedItems = new Set();
 createLabel();
 createScatterPlotMatrix(width, height);
 createHorizontalParallelCoordinates(width, height / 2);
-
-
 
 /**
  * creates legend with a colour dot for each label using enter function
@@ -117,7 +123,7 @@ function createScatterPlotMatrix(width, height) {
         scatterplot_matrix.each(function (d) { // each pair from cross combination
             const cell = d3.select(this);
 
-            scatterPlot(d[0], d[1], cell, grid_width, grid_height, margin);
+            scatterPlot(d[0], d[1], cell, svg, grid_width, grid_height, margin);
 
             const labelXPosition = (grid_width - margin.right - margin.left) / 2 + margin.left;
             const labelYPosition = 10;
@@ -150,7 +156,7 @@ function createScatterPlotMatrix(width, height) {
  * @param {number} height height of the cell
  * @param {Object} margin margin object, which stores all four margins (top, left, bottom, right)
  */
-function scatterPlot(labelX, labelY, scatterplotCell, width, height, margin) {
+function scatterPlot(labelX, labelY, scatterplotCell, svg, width, height, margin) {
     readFile.then(() => {
         // empty arrays for values
         let xValues = [];
@@ -159,9 +165,6 @@ function scatterPlot(labelX, labelY, scatterplotCell, width, height, margin) {
         // fill x and y values into arrays
         for (const entry of filteredDataset) {
             xValues.push(entry[`${labelX}`]);
-        }
-
-        for (const entry of filteredDataset) {
             yValues.push(entry[`${labelY}`]);
         }
 
@@ -170,7 +173,7 @@ function scatterPlot(labelX, labelY, scatterplotCell, width, height, margin) {
             .domain(d3.extent(xValues))
             .range([0, width - margin.right - 10]);
 
-        let xAxis = d3.axisBottom().scale(xScaling).ticks(7)
+        let xAxis = d3.axisBottom().scale(xScaling).ticks(7);
 
         // draw axis in scatter plot cell using that scaling
         scatterplotCell
@@ -184,7 +187,7 @@ function scatterPlot(labelX, labelY, scatterplotCell, width, height, margin) {
             .domain(d3.extent(yValues))
             .range([height - margin.bottom, margin.top]);
 
-        let yAxis = d3.axisLeft().scale(yScaling).ticks(7)
+        let yAxis = d3.axisLeft().scale(yScaling).ticks(7);
 
         // draw axis in scatter plot cell using that scaling
         scatterplotCell
@@ -197,37 +200,89 @@ function scatterPlot(labelX, labelY, scatterplotCell, width, height, margin) {
             .data(filteredDataset)
             .enter()
             .append("circle")
+                .attr("class", "data-point")
                 .attr("cx", (data) => { return xScaling(data[`${labelX}`]) + margin.left; })
                 .attr("cy", (data) => { return yScaling(data[`${labelY}`]); })
                 .attr("r", 2)
                 .style("fill", (data) => { return colours(data.year); });
 
 
-
         const brush = d3.brush()
             .extent([
                 [margin.left, margin.top],
-                [axisYWidth, axisXHeight]
+                [width, height - margin.bottom]
             ])
-            .on("end", brushed); // for simplifiying the matter we do it only at the end.
+            .on("start", brushStarted)
+            .on("brush", brushed)
+            .on("end", brushEnded)
 
         scatterplotCell.call(brush);
 
+        let brushCell;
+        // Clear the previously-active brush, if any.
+        function brushStarted() {
+            if (brushCell !== this) {
+                d3.select(brushCell).call(brush.move, null);
+                brushCell = this;
+            }
+        }
 
         function brushed(brushEvent) {
+            const selection = brushEvent.selection;
+            const scatterPLotD3 = d3.select(this); //  this always refers to the current plot
+            let selectedCircles = [];
+            const allCircles = scatterPLotD3.selectAll("circle");
 
-            const selection = brushEvent.selection
-            const scatterPLotD3 = d3.select(this) //  this always refers to the current plot
+            allCircles.style("fill", function (data) {
+                const cx = xScaling(data[`${labelX}`]) + margin.left;
+                const cy = yScaling(data[`${labelY}`]);
+                return isInsideBrush(selection, cx, cy) ? colours(data.year) : desaturatedColours(data.year);
+            });
 
+            allCircles.style("r", function (data) {
+                const cx = xScaling(data[`${labelX}`]) + margin.left;
+                const cy = yScaling(data[`${labelY}`]);
+                return isInsideBrush(selection, cx, cy) ? 2 : 0.5;
+            });
 
-            // Add solution here
+            selectedCircles = filteredDataset.filter(data => {
+                const cx = xScaling(data[`${labelX}`]) + margin.left;
+                const cy = yScaling(data[`${labelY}`]);
+                return isInsideBrush(selection, cx, cy);
+            });
 
+            console.log(selectedCircles)
+
+            svg.property("value", selectedCircles).dispatch("input");
+        }
+
+        function brushEnded(brushEvent) {
+            const selection = brushEvent.selection;
+            const scatterPLotD3 = d3.select(this);
+            const allCircles = scatterPLotD3.selectAll("circle");
+
+            if (selection) return;
+            allCircles.style("fill", (data) => {
+                const cx = xScaling(data[`${labelX}`]) + margin.left;
+                const cy = yScaling(data[`${labelY}`]);
+                return isInsideBrush(selection, cx, cy) ? desaturatedColours(data.year) : colours(data.year);
+            });
+
+            allCircles.style("r", (data) => {
+                const cx = xScaling(data[`${labelX}`]) + margin.left;
+                const cy = yScaling(data[`${labelY}`]);
+                return isInsideBrush(selection, cx, cy) ? 0.5 : 2;
+            });
+            svg.property("value", []).dispatch("input");
         }
 
         // A function that return TRUE or FALSE according if a dot is in the selection or not
         function isInsideBrush(brush_coords, cx, cy) {
             if (brush_coords)
-                return brush_coords[0][0] <= cx && cx <= brush_coords[1][0] && brush_coords[0][1] <= cy && cy <= brush_coords[1][1];    // This return TRUE or FALSE depending on if the points
+                return brush_coords[0][0] <= cx &&
+                    cx <= brush_coords[1][0] &&
+                    brush_coords[0][1] <= cy &&
+                    cy <= brush_coords[1][1];    // This return TRUE or FALSE depending on if the points
             else
                 return false;
         }
@@ -274,12 +329,12 @@ function createHorizontalParallelCoordinates(width, height) {
            .data(numericalAttributes)
            .enter()
            .append("g")
-            .attr("class", (data) => { return `y-axis-${data}`; })
+            .attr("class", (data) => { return `y-axis`; })
             .attr("transform", (data) => { return `translate (${xScaling(data)}, 0)`; })
             .each(function (data) { d3.select(this).call(d3.axisLeft().scale(yAxesScaling[data])); })
            .append("text")
             .attr("class", (data) => { return `y-label-${data}`; })
-            .attr("y", margin.top - 9)
+            .attr("y", height - margin.bottom + 15)
             .text((data) => { return data; })
             .style("text-anchor", "middle")
             .style("fill", "black");
@@ -292,8 +347,9 @@ function createHorizontalParallelCoordinates(width, height) {
            .attr("d", drawPath)
            .style("fill", "none")
            .style("stroke", (data) => { return colours(data.year); })
-           .style("opacity", 0.7);
+           .style("opacity", 0.4);
 
+       const axes = parallelCoordinatesPlot.selectAll("g.y-axis")
 
        const brushWidth = 10;
        const brush = d3.brushY()
@@ -305,13 +361,19 @@ function createHorizontalParallelCoordinates(width, height) {
        axes.call(brush);
 
 
-
        function brushed(brushEvent, key) {
+           const selection = brushEvent.selection;
+           console.log(yAxesScaling[key])
+           const allPaths = parallelCoordinatesPlot.selectAll("path");
+           if (selection) return;
 
-           const selection = brushEvent.selection
-           const attributeName = key[0]
+           allPaths.style("stroke", (data) => {
+               const y = yAxesScaling[key](data);
+                console.log(y)
+           });
 
-           // Add your code here
+
+
 
 
        }
