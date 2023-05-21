@@ -239,11 +239,11 @@ function scatterPlot(labelX, labelY, scatterplotCell, svg, width, height, margin
                 return isInsideBrush(selection, cx, cy) ? colours(data.year) : desaturatedColours(data.year);
             });
 
-            allCircles.style("r", function (data) {
+            /*allCircles.style("r", function (data) {
                 const cx = xScaling(data[`${labelX}`]) + margin.left;
                 const cy = yScaling(data[`${labelY}`]);
                 return isInsideBrush(selection, cx, cy) ? 2 : 0.5;
-            });
+            });*/
 
             selectedCircles = filteredDataset.filter(data => {
                 const cx = xScaling(data[`${labelX}`]) + margin.left;
@@ -357,24 +357,28 @@ function createHorizontalParallelCoordinates(width, height) {
                [-brushWidth / 2, margin.top],
                [brushWidth / 2, height - margin.bottom]
            ])
-           .on("end", brushed);
+           .on("start brush end", brushed);
        axes.call(brush);
 
 
-       function brushed(brushEvent, key) {
-           const selection = brushEvent.selection;
-           console.log(yAxesScaling[key])
-           const allPaths = parallelCoordinatesPlot.selectAll("path");
-           if (selection) return;
+       function brushed({selection}, key) {
+           let selections = new Map();
+           if (selection === null) {
+               selections.delete(key);
+           } else {
+               selections.set(key, selection.map(yAxesScaling[key].invert));
+           }
 
-           allPaths.style("stroke", (data) => {
-               const y = yAxesScaling[key](data);
-                console.log(y)
-           });
-
-
-
-
+           parallelCoordinatesPlot.selectAll("path")
+               .each(function (data) {
+                   console.log(data)
+                   if (data === null) return;
+                   const selected = Array.from(selections).every(([key, [max, min]]) => data[key] >= min && data[key] <= max);
+                   d3.select(this).style("opacity", selected ? 0.4 : 0.1);
+                   if (selected) {
+                       d3.select(this).raise();
+                   }
+               });
 
        }
    })
