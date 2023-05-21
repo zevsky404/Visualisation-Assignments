@@ -14,7 +14,7 @@ for (const colour of colourScheme) {
     newColourScheme.push(d3.rgb(colour).darker(0.5).toString());
 }
 
-const desaturatedColours = d3.scaleOrdinal()
+const darkerColours = d3.scaleOrdinal()
     .domain(years)
     .range(newColourScheme);
 
@@ -218,8 +218,9 @@ function scatterPlot(labelX, labelY, scatterplotCell, svg, width, height, margin
 
         scatterplotCell.call(brush);
 
-        let brushCell;
+
         // Clear the previously-active brush, if any.
+        let brushCell;
         function brushStarted() {
             if (brushCell !== this) {
                 d3.select(brushCell).call(brush.move, null);
@@ -229,43 +230,31 @@ function scatterPlot(labelX, labelY, scatterplotCell, svg, width, height, margin
 
         function brushed(brushEvent) {
             const selection = brushEvent.selection;
-            const scatterPLotD3 = d3.select(this); //  this always refers to the current plot
-            let selectedCircles = [];
-            const allCircles = scatterPLotD3.selectAll("circle");
+            const allCircles = d3.selectAll("circle");
 
             allCircles.style("fill", function (data) {
                 const cx = xScaling(data[`${labelX}`]) + margin.left;
                 const cy = yScaling(data[`${labelY}`]);
-                return isInsideBrush(selection, cx, cy) ? colours(data.year) : desaturatedColours(data.year);
+                return isInsideBrush(selection, cx, cy) ? colours(data.year) : darkerColours(data.year);
             });
 
-            /*allCircles.style("r", function (data) {
+            allCircles.style("r", function (data) {
                 const cx = xScaling(data[`${labelX}`]) + margin.left;
                 const cy = yScaling(data[`${labelY}`]);
                 return isInsideBrush(selection, cx, cy) ? 2 : 0.5;
-            });*/
-
-            selectedCircles = filteredDataset.filter(data => {
-                const cx = xScaling(data[`${labelX}`]) + margin.left;
-                const cy = yScaling(data[`${labelY}`]);
-                return isInsideBrush(selection, cx, cy);
             });
 
-            console.log(selectedCircles)
-
-            svg.property("value", selectedCircles).dispatch("input");
         }
 
         function brushEnded(brushEvent) {
             const selection = brushEvent.selection;
-            const scatterPLotD3 = d3.select(this);
-            const allCircles = scatterPLotD3.selectAll("circle");
+            const allCircles = d3.selectAll("circle");
 
             if (selection) return;
             allCircles.style("fill", (data) => {
                 const cx = xScaling(data[`${labelX}`]) + margin.left;
                 const cy = yScaling(data[`${labelY}`]);
-                return isInsideBrush(selection, cx, cy) ? desaturatedColours(data.year) : colours(data.year);
+                return isInsideBrush(selection, cx, cy) ? darkerColours(data.year) : colours(data.year);
             });
 
             allCircles.style("r", (data) => {
@@ -273,7 +262,6 @@ function scatterPlot(labelX, labelY, scatterplotCell, svg, width, height, margin
                 const cy = yScaling(data[`${labelY}`]);
                 return isInsideBrush(selection, cx, cy) ? 0.5 : 2;
             });
-            svg.property("value", []).dispatch("input");
         }
 
         // A function that return TRUE or FALSE according if a dot is in the selection or not
@@ -379,7 +367,6 @@ function createHorizontalParallelCoordinates(width, height) {
                        d3.select(this).raise();
                    }
                });
-
        }
    })
 }
