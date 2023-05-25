@@ -4,23 +4,34 @@ import { bigMoneyFormat, shortenText } from "./src/utils.js";
 export function icicle({
   svg,
   data,
-  width = 1000,
-  height = 600,
+  height = 1000,
+  width = 600,
   color
 }) {
 
   // define a hierarchy for the data
-  // const hierarchy =
+  const root = d3.hierarchy(data).sum(entry => entry.revenue);
+  console.log(root)
 
 
   // define a partition layout as the root of the hierarchy
-  // const root =
+  const partitionLayout = d3.partition().size([width, height]);
+  partitionLayout(root);
 
   // compute the maximum depth of hierarchy from the root node
-  // const maxDepth =
+  const maxDepth = d3.max(root.descendants(), (descendant) => { return descendant.depth; });
 
   // define a scale for the depth of the hierarchy
-  // const scaleX =
+  const paddingInner = 20;
+  const paddingOuter = 10;
+  const range = (start, end) => Array.from({ length: end - start + 1 }, (_, i) => (start + i).toString());
+
+  const scaleY = d3.scaleBand()
+      .domain(range(1, maxDepth))
+      .range([0, height])
+      .paddingInner(paddingInner)
+      .paddingOuter(paddingOuter)
+
 
   // setup the viewBox and font for the SVG
   svg.attr("viewBox", [0, 0, width, height]).attr("font-family", "sans-serif");
@@ -30,9 +41,17 @@ export function icicle({
     .selectAll("g")
     .data(root.descendants().filter((d) => d.depth > 0))
     .join("g")
-    .attr("transform", (d) => `translate(${scaleX(d.depth)},${d.x0})`);
+    .attr("transform", (d) => `translate(${scaleY((d.depth).toString())},${d.x0})`);
 
-  // create a rectangle for each node
+  svg.selectAll("rect")
+      .data(root.descendants)
+      .enter()
+      .append("rect")
+      .attr("class", "icicle-rect")
+      .style("fill", "#BBB")
+      .attr("x", data => { return data.x0; } )
+      .attr("y", data => { return data.y0; })
+
 
   const minFontSize = 6;
 
