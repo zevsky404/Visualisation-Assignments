@@ -49,35 +49,35 @@ export function lineChart({
   // draw the x-axis
   svg.append("g")
       .attr("class", "x-axis")
-      .attr("transform", `translate(0, ${height - margin.bottom})`)
+      .attr("transform", `translate(0, ${height - margin.bottom + 20})`)
       .call(xAxis);
 
   // put the text label for x axis
   svg.append("text")
       .attr("class", "x-axis-label")
       .text("Days since Release")
-      .attr("x", width / 2)
-      .attr("y", height - margin.bottom + 40)
+      .attr("x", width / 2 - margin.right)
+      .attr("y", height)
       .style("fill", "gray")
-      .style("font-size", 15);
+      .style("font-size", 12);
 
 
   // draw the y-axis
   svg.append("g")
       .attr("class", "y-axis")
-      .attr("transform", `translate(${margin.left}, ${margin.bottom - 70})`)
+      .attr("transform", `translate(${margin.left}, ${margin.bottom - 50})`)
       .call(yAxis);
 
   // put the text label for y axis
   svg.append("text")
       .attr("class", "y-axis-label")
       .text("Total Gross")
-      .attr("transform", `rotate(90), translate(700, 700)`)
+      .attr("transform", `rotate(-90, 15, ${height / 2}), translate(10, ${height / 2})`)
       .style("fill", "gray")
       .style("font-size", 15);
 
   // color scale by movie title
-  let movieTitles = movies.map((title) => { return title.key; });
+  let movieTitles = movies.map((entry) => { return entry.key; });
   const color = d3.scaleOrdinal()
       .domain(movieTitles)
       .range(["#23171b","#4a58dd","#2f9df5","#27d7c4","#4df884","#95fb51","#dedd32","#ffa423","#f65f18","#ba2208","#900c00"]);
@@ -108,6 +108,11 @@ export function lineChart({
             .attr("d", (data) => { return  line(data.values); });
       });
 
+  const maxGross = {};
+  for (const entry of movies) {
+    maxGross[entry.key] = entry.values[entry.values.length - 1].totalGross;
+  }
+
   // add labels for the series
   series.each(function () {
     d3.select(this)
@@ -115,12 +120,9 @@ export function lineChart({
         .attr("class", "movie-label")
         .text( data => { return shortenText(data.key); })
         .attr("fill", (data) => { return color(data.key); })
-        .attr("x" ,() => { return scaleX(d3.max(scaleX.domain())); })
-        .attr("y", (data) => { return scaleY(); })
+        .attr("x" ,() => { return scaleX(d3.max(scaleX.domain())) + 10; })
+        .attr("y", (data) => { return scaleY(maxGross[data.key]); })
   })
-
-  //TODO: align paths with axes
-  //TODO: position labels correctly
 
 
   // Optional brushing task start here
