@@ -26,7 +26,7 @@ export function lineChart({
   // define scale for the number of days on the x-axis
   const scaleX = d3.scaleLinear()
       .domain(d3.extent(attributeX))
-      .range([margin.left, width - margin.right]);
+      .range([margin.left + 60, width - margin.right]);
 
   const xAxis = d3.axisBottom().scale(scaleX).ticks(5 );
 
@@ -34,7 +34,7 @@ export function lineChart({
   // define scale for total weekly gross on the y-axis
   const scaleY = d3.scaleLinear()
       .domain(d3.extent(attributeY))
-      .range([height - margin.top, margin.bottom]);
+      .range([height - margin.top - 50, margin.bottom]);
 
 
   const yAxis = d3.axisLeft().scale(scaleY).tickFormat(domain => { return bigMoneyFormat(domain); });
@@ -49,31 +49,30 @@ export function lineChart({
   // draw the x-axis
   svg.append("g")
       .attr("class", "x-axis")
-      .attr("transform", `translate(0, ${height - margin.bottom + 20})`)
+      .attr("transform", `translate(0, ${height - margin.bottom - 30})`)
       .call(xAxis);
 
   // put the text label for x axis
   svg.append("text")
       .attr("class", "x-axis-label")
       .text("Days since Release")
-      .attr("x", width / 2 - margin.right)
-      .attr("y", height)
-      .style("fill", "gray")
-      .style("font-size", 12);
+      .attr("transform", `translate(${width / 2 - 60}, ${height - 40})`)
+      .style("fill", "black")
+      .style("font-size", 15)
 
 
   // draw the y-axis
   svg.append("g")
       .attr("class", "y-axis")
-      .attr("transform", `translate(${margin.left}, ${margin.bottom - 50})`)
+      .attr("transform", `translate(${margin.left + 60}, ${margin.bottom - 50})`)
       .call(yAxis);
 
   // put the text label for y axis
   svg.append("text")
       .attr("class", "y-axis-label")
       .text("Total Gross")
-      .attr("transform", `rotate(-90, 15, ${height / 2}), translate(10, ${height / 2})`)
-      .style("fill", "gray")
+      .attr("transform", `rotate(-90, 45, ${height / 2}), translate(45, ${height / 2})`)
+      .style("fill", "black")
       .style("font-size", 15);
 
   // color scale by movie title
@@ -118,7 +117,7 @@ export function lineChart({
     d3.select(this)
         .append("text")
         .attr("class", "movie-label")
-        .text( data => { return shortenText(data.key); })
+        .text( data => { return shortenText(data.key, 20); })
         .attr("fill", (data) => { return color(data.key); })
         .attr("x" ,() => { return scaleX(d3.max(scaleX.domain())) + 10; })
         .attr("y", (data) => { return scaleY(maxGross[data.key]); })
