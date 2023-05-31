@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import {bigMoneyFormat} from "./src/utils.js";
+import {bigMoneyFormat, shortenText} from "./src/utils.js";
 
 export function icicle({
   svg,
@@ -9,9 +9,9 @@ export function icicle({
   color
 }) {
 
+
   // define a hierarchy for the data
   const root = d3.hierarchy(data).sum(entry => entry.revenue);
-  console.log(root)
 
   // define a partition layout as the root of the hierarchy
   const partitionLayout = d3.partition().size([width, height]);
@@ -19,7 +19,6 @@ export function icicle({
 
   // compute the maximum depth of hierarchy from the root node
   const maxDepth = d3.max(root.descendants(), (descendant) => { return descendant.depth; });
-  console.log(maxDepth)
 
   // define a scale for the depth of the hierarchy
   /*const paddingInner = 20;
@@ -43,15 +42,20 @@ export function icicle({
     .join("g")
     .attr("transform", (d) => `translate(${d.y0 - 250}, ${d.x0})`);
 
+  const getTopMostParent = (d) => {
+    const ancestors = d.ancestors();
+    const topMostParent = ancestors[ancestors.length - 2].data;
+    return topMostParent;
+  }
+
   node.each(function () {
     d3.select(this)
         .append("rect")
         .attr("class", "icicle-rect")
-        .style("fill", data => { return color(data.data.name); })
+        .style("fill", data => { return color(getTopMostParent(data)); })
         .attr("width", data => { return data.y1 - data.y0 - 1})
         .attr("height", data => { return data.x1 - data.x0 - Math.min(1, (data.x1 - data.x0)); })
   })
-
 
   const minFontSize = 6;
 
@@ -64,23 +68,54 @@ export function icicle({
   const text = (data) => {
     let movieTitle;
     let movieRevenue;
-    data.data.name ? movieTitle = data.data.name : movieTitle = data.data.title;
+    data.data.name ? movieTitle = shortenText(data.data.name, ) : movieTitle = shortenText(data.data.title, );
     movieRevenue = bigMoneyFormat(data.value);
 
     return `${movieTitle}: ${movieRevenue}`
   }
 
+  const translation = (d, i, nodes) => {
+    const fontSize = parseFloat(d3.select(nodes[i]).style("font-size"));
+    const translateY = fontSize * 0.9;
+    return 'translate(5,' + translateY + ')';
+  }
+
+  const fitsRectangle = (d, i, nodes) => {
+    const textHeight = parseFloat(d3.select(nodes[i]).style("font-size")) * 1.2 +
+        parseFloat(d3.select(nodes[i]).style("font-size")) * 0.9;
+    const rectHeight = d.y1 - d.y0;
+    return rectHeight < textHeight;
+  }
 
   // create text labels for each node
-      node.each(function() {
-        d3.select(this)
-            .append("text")
-            .attr("class", "cell-title")
-            .attr("transform", "translate(5, 9)")
-            .text(data => { return text(data); })
-            .attr("font-size", data => { return fontSize(data); })
-      })
+  node.each(function() {
+    d3.select(this)
+        .append("text")
+        .attr("class", "cell-title")
+        //.classed("hidden", fitsRectangle)
+        .text(data => { return text(data); })
+        .attr("font-size", data => { return fontSize(data); })
 
+    const rect = d3.select(this).select("rect");
+    const textElement = d3.select(this).select("text");
+    const rectHeight = rect.attr("height");
+    const textHeight = textElement.attr("font-size");
+    console.log(`Rect height: ${rectHeight}, text height: ${textHeight}`)
+
+    if (rectHeight < textHeight) {
+      d3.select(this).select("text").classed("hidden", true).classed("cell-title", false);
+    }
+
+  })
+
+  const allTextElements = d3.selectAll("text.cell-title");
+  const allRectangles = d3.selectAll("rect.icicle-rect");
+
+  allTextElements.each(function () {
+    d3.select(this)
+        .attr("transform", translation)
+        .classed("hidden", fitsRectangle)
+  })
 
   return svg.node();
 }
