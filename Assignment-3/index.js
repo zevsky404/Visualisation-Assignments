@@ -20,7 +20,7 @@ loadMoviesDataset().then((movies) => {
   const franchises = movieFranchises(movies);
   console.log(franchises);
   const color = d3
-    .scaleOrdinal(d3.schemeTableau10)
+    .scaleOrdinal(d3.schemeSet2)
     .domain(new Set(franchises.children, (d) => d.data.name));
 
   icicle({
