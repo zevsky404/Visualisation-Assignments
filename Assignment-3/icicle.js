@@ -51,7 +51,7 @@ export function icicle({
   const text = (data) => {
     let movieTitle;
     let movieRevenue;
-    data.data.name ? movieTitle = shortenText(data.data.name, 20) : movieTitle = shortenText(data.data.title, 10);
+    data.data.name ? movieTitle = shortenText(data.data.name, 30) : movieTitle = shortenText(data.data.title, 15);
     movieRevenue = bigMoneyFormat(data.value);
 
     return `${movieTitle}: ${movieRevenue}`
@@ -75,7 +75,7 @@ export function icicle({
     const textElement = d3.select(this).select("text");
 
     const rectHeight = rect.attr("height");
-    const textHeight = textElement.attr("font-size");
+    const textHeight = textElement.attr("font-size") * 0.9;
 
     if (rectHeight < textHeight) {
       d3.select(this).select("text").classed("hidden", true).classed("cell-title", false);
