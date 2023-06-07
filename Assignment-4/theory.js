@@ -10,6 +10,11 @@ export function theoryQuestions({ svg }) {
 
     // answer the questions by calling the function answerQ1
     // answerQ1(svg, "wordcloud", "identify patterns"); // example
+    answerQ1(svg, "parallel coordinates", "discover multi-attribute correlation");
+    answerQ1(svg, "scatterplots", "identify patterns");
+    answerQ1(svg, "scatterplots", "locate outliers");
+    answerQ1(svg, "icicle map", "browse topology");
+    answerQ1(svg, "horizon charts", "compare trends");
 
 }
 

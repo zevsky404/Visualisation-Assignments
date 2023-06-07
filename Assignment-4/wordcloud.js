@@ -13,10 +13,11 @@ export function wordcloud({ svg, wordsPerGroup, selection }) {
   // group element, translated such that the origin is in the middle of the svg
   const g = svg
     .append("g")
-    .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+    .attr("transform", `translate(${width / 2}, ${height / 2})`);
 
   // word size scale, you can play around with the range if you like
-  const size = d3.scaleLinear().range([10, 50]);
+  const size = d3.scaleLinear()
+      .range([10, 50]);
 
   // fill the select box with the options from the wordsPerGroup
   selection
