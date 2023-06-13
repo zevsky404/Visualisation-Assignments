@@ -1,6 +1,6 @@
 import * as d3 from "d3";
-import { bigMoneyFormat, shortenText } from "./src/utils.js";
-import {stratify, treemapDice, treemapSlice, treemapSliceDice} from "d3";
+import {treemapSliceDice} from "d3";
+import {bigMoneyFormat, shortenText} from "./src/utils.js";
 
 export function treemap({
   svg,
@@ -15,8 +15,6 @@ export function treemap({
   // Task 3: prepare the treemap using d3.treemap and d3.hierarchy with the
   // Slice and Dice tiling algorithm.
 
-
-  // INSERT YOUR CODE HERE
   const root = d3.hierarchy(data)
       .sum(entry => entry.revenue)
       .sort(function(a, b) { return b.height - a.height || b.value - a.value; });
@@ -26,8 +24,6 @@ export function treemap({
       .padding(3)
       .tile(treemapSliceDice)
       (root);
-
-  // END OF YOUR CODE
 
   draw();
 
@@ -41,13 +37,11 @@ export function treemap({
     const node = svg
         .selectAll("g")
         .data(root.leaves())
-        .join("g")
-        //.attr("transform", (d) => `translate(${d.y0}, ${d.x0})`);
+        .join("g");
 
     const getTopMostParent = (d) => {
       const ancestors = d.ancestors();
-      const topMostParent = ancestors[ancestors.length - 2].data;
-      return topMostParent;
+      return ancestors[ancestors.length - 2].data;
     }
 
     // actually draw the rectangles
@@ -103,7 +97,6 @@ export function treemap({
       let movieRevenue;
       data.data.name ? movieTitle = shortenText(data.data.name, 30) : movieTitle = shortenText(data.data.title, 15);
       movieRevenue = bigMoneyFormat(data.value);
-
       return `${movieTitle}: \n ${movieRevenue}`
     }
 
@@ -115,8 +108,7 @@ export function treemap({
           .text(data => { return text(data); })
           .attr("font-size", 12)
           .attr("x", d => { return d.x0; })
-          .attr("y", d => { return d.y0 })
-          //.attr("text-anchor", "middle");
+          .attr("y", d => { return d.y0 });
 
       const rect = d3.select(this).select("rect");
       const textElement = d3.select(this).select("text");
@@ -140,15 +132,13 @@ export function treemap({
       const fontSize = parseFloat(d3.select(nodes[i]).style("font-size"));
       const translateY = fontSize * 0.8;
       return `translate(5, ${translateY})`;
-    }
+    };
 
     const allTextElements = d3.selectAll("text.cell-title");
-
     allTextElements.each(function () {
       d3.select(this)
           .attr("transform", translation)
     });
-
     wrap(allTextElements, 30);
 }
 

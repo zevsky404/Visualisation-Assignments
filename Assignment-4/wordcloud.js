@@ -21,7 +21,7 @@ export function wordcloud({ svg, wordsPerGroup, selection }) {
 
   // word size scale, you can play around with the range if you like
   const size = d3.scaleLinear()
-      .range([10, 55]);
+      .range([12, 55]);
 
   // fill the select box with the options from the wordsPerGroup
   selection
@@ -30,25 +30,13 @@ export function wordcloud({ svg, wordsPerGroup, selection }) {
     .join("option")
     .text((d) => d);
 
-  // start of TODO: create the layout of the word cloud with
-  // d3-cloud. The function you need has been imported for you
-  // as "cloud()". Note, that the actual words will be
-  // determined in the "update()"-function below.
-  // The layout should call the "draw()"-function on "end".
-
-  const easeLinear = d3.transition()
-      .duration(750)
-      .ease(d3.easeLinear);
-
   const colourRange = d3.interpolateRgb("rgb(255, 227, 134)", "rgb(255, 87, 51)");
   const colour = d3.scaleSequential(colourRange);
 
   const layout = cloud()
       .size([width, height])
-      .padding(4)
-      //.on("end", draw)
+      .padding(4);
 
-  // end of TODO
   update();
   selection.on("change", update);
 
@@ -56,7 +44,6 @@ export function wordcloud({ svg, wordsPerGroup, selection }) {
   function update() {
     // get the option of the select box
     const group = selection.property("value");
-
     // get the 100 most frequent words of the selected group
     const words = wordsPerGroup.get(group).slice(0, 100);
     //console.log(words)
@@ -65,14 +52,13 @@ export function wordcloud({ svg, wordsPerGroup, selection }) {
     size.domain(d3.extent(words, (d) => d[1]));
     colour.domain(d3.extent(words, (d) => d[1]));
     // start of TODO: adjust the layout accordingly
-    // call the layout with the words -> layout.words(....)
-
     layout
         .words(words)
         .rotate(() => { return ~~(Math.random() * 2) * 90; })
         .fontSize(d => { return size(d[1]); })
         .on("end", draw);
     // end of TODO
+
     layout.start(); // then call layout.start() to start the layout
 
   }
