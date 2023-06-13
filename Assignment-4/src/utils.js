@@ -28,7 +28,7 @@ export function bigMoneyFormat(value) {
 //  text: the input string
 //  maxLength: the total maximum length of the string
 //  postfix: a string to append to the shortened string, defaults to three dots
-export function shortenText(text, maxLength = 15, postfix = "…") {
+export function shortenText(text, maxLength = 10, postfix = "…") {
   if (!text) {
     return "";
   }

@@ -55,13 +55,46 @@ export function treemap({
       d3.select(this)
           .append("rect")
           .attr("class", "treemap-rect")
-          .style("fill", data => { return color(getTopMostParent(data)); })
+          .style("fill", d => { return color(getTopMostParent(d)); })
           .attr("x", d => { return d.x0; })
           .attr("y", d => { return d.y0; })
-          .attr("width", data => { return data.x1 - data.x0})
-          .attr("height", data => { return data.y1 - data.y0; })
+          .attr("width", d => { return d.x1 - d.x0})
+          .attr("height", d => { return d.y1 - d.y0; })
 
     });
+
+    function wrap(text, width) {
+      text.each(function () {
+        let text = d3.select(this),
+            words = text.text().split(/\s+/).reverse(),
+            word,
+            line = [],
+            lineNumber = 0,
+            lineHeight = 1.1, // ems
+            x = text.attr("x"),
+            y = text.attr("y"),
+            dy = 0, //parseFloat(text.attr("dy")),
+            tspan = text.text(null)
+                .append("tspan")
+                .attr("x", x)
+                .attr("y", y)
+                .attr("dy", dy + "em");
+        while (word = words.pop()) {
+          line.push(word);
+          tspan.text(line.join(" "));
+          if (tspan.node().getComputedTextLength() > width) {
+            line.pop();
+            tspan.text(line.join(" "));
+            line = [word];
+            tspan = text.append("tspan")
+                .attr("x", x)
+                .attr("y", y)
+                .attr("dy", ++lineNumber * lineHeight + dy + "em")
+                .text(word);
+          }
+        }
+      });
+    }
 
 
     // setup labels for rectangles that are big enough
@@ -80,32 +113,33 @@ export function treemap({
           .append("text")
           .attr("class", "cell-title")
           .text(data => { return text(data); })
-          .attr("font-size", data => { return fontSize(data); })
-          .attr("x", d => { return d.x1; })
-          .attr("y", d => { return d.y0; });
+          .attr("font-size", 12)
+          .attr("x", d => { return d.x0; })
+          .attr("y", d => { return d.y0 })
+          //.attr("text-anchor", "middle");
 
       const rect = d3.select(this).select("rect");
       const textElement = d3.select(this).select("text");
 
       const rectHeight = rect.attr("height");
       const rectWidth = rect.attr("width");
-      const textWidth = textElement.node().getComputedTextLength();
-      const textHeight = textElement.attr("font-size") * 0.9;
+      const textWidth = textElement.node().getBBox().width - 87;
+      const textHeight = textElement.node().getBBox().height + 10;
 
       if (rectHeight < textHeight) {
         d3.select(this).select("text").classed("hidden", true).classed("cell-title", false);
       }
 
-      /*if (rectWidth < textWidth) {
+      if (rectWidth < textWidth) {
         d3.select(this).select("text").classed("hidden", true).classed("cell-title", false);
-      }*/
+      }
 
   });
 
     const translation = (d, i, nodes) => {
       const fontSize = parseFloat(d3.select(nodes[i]).style("font-size"));
-      const translateY = fontSize * 0.9;
-      return `translate(5, ${translateY}), rotate(-90, ${d.x0}, ${d.y0})`;
+      const translateY = fontSize * 0.8;
+      return `translate(5, ${translateY})`;
     }
 
     const allTextElements = d3.selectAll("text.cell-title");
@@ -114,6 +148,8 @@ export function treemap({
       d3.select(this)
           .attr("transform", translation)
     });
+
+    wrap(allTextElements, 30);
 }
 
 // naive function to heuristically determine font size based on the rectangle size

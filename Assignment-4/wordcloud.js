@@ -8,10 +8,10 @@ import {transition} from "d3";
  * selection: d3 selection of select element
  */
 export function wordcloud({ svg, wordsPerGroup, selection }) {
-  console.log(wordsPerGroup.get("Crime")[9]);
-  console.log(selection.node().options)
-  const width = 800;
-  const height = 400;
+  //console.log(wordsPerGroup.get("Crime")[9]);
+  //console.log(selection.node().options)
+  const width = 700;
+  const height = 450;
   svg.attr("viewBox", [0, 0, width, height]);
 
   // group element, translated such that the origin is in the middle of the svg
@@ -36,7 +36,11 @@ export function wordcloud({ svg, wordsPerGroup, selection }) {
   // determined in the "update()"-function below.
   // The layout should call the "draw()"-function on "end".
 
-  const colourRange = d3.interpolateRgb("rgb(180, 180, 180)", "rgb(0, 140, 199)");
+  const easeLinear = d3.transition()
+      .duration(750)
+      .ease(d3.easeLinear);
+
+  const colourRange = d3.interpolateRgb("rgb(255, 227, 134)", "rgb(255, 87, 51)");
   const colour = d3.scaleSequential(colourRange);
 
   const layout = cloud()
@@ -75,7 +79,7 @@ export function wordcloud({ svg, wordsPerGroup, selection }) {
 
   // complete the draw function to draw the word cloud
   function draw(words) {
-    console.log(words)
+    //console.log(words)
     // start of TODO: create the word cloud
     g.selectAll("text")
         .data(words)
@@ -86,7 +90,7 @@ export function wordcloud({ svg, wordsPerGroup, selection }) {
           .style("fill", d => { return `${colour(d[1])}`; })
           .attr("text-anchor", "middle")
           .attr("font-family", "Bebas Neue")
-          .attr("transform", d => { return `translate(${[d.x, d.y]}), rotate(${d.rotate})`; })
+          .attr("transform", d => { return `translate(${[d.x, d.y]}), rotate(${d.rotate})`; });
 
     // end of TODO
   }

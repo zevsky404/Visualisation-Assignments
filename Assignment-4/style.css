@@ -100,4 +100,16 @@ body {
   .hidden {
     display: none;
   }
+
+  text {
+    transition: font-size 1s ease-out 5ms !important;
+  }
+
+  text:hover {
+    font-size: 1.1em !important;
+  }
+
+  #wordcloud > g {
+    font-size: 50px;
+  }
   
