@@ -67,7 +67,7 @@ export function treemap({
             lineHeight = 1.1, // ems
             x = text.attr("x"),
             y = text.attr("y"),
-            dy = 0, //parseFloat(text.attr("dy")),
+            dy = 0.1,
             tspan = text.text(null)
                 .append("tspan")
                 .attr("x", x)
