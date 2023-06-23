@@ -97,8 +97,8 @@ vec3 calculate_gradient(vec3 in_sampling_pos)
 #else
 
 
-
     // TASK 3: calculate the gradient (by sampling the data volume) using the central differences method
+
     
     return vec3(0,0,0); // placeholder - remove in your implementation
 
@@ -237,19 +237,40 @@ void main()
    
 #if TASK == 1 
     // TASK 1 - maximum intensity projection
+    float max_found_value = 0.0f;
+
+    while(inside_volume_bounds(sampling_pos)) {
+        float found_value = sample_data_volume(sampling_pos);
+        max_found_value = max(found_value, max_found_value);
+        sampling_pos += ray_increment;
+    }
+    out_col = vec4(max_found_value, max_found_value, max_found_value, 1.0f);
 
 
-#endif
+    #endif
 
 #if TASK == 2 
     // TASK 2: first-hit iso-surface raycasting
+    float last_sampled_value = 0.0f;
 
-    // Code snippet for TASK 3 - should be executed only when an iso-surface intersection is found
-    //#if ENABLE_LIGHTING
-    //        vec3 gradient = calculate_gradient(sampling_pos);
-    //        vec3 lighting = calculate_illumination(sampling_pos, -gradient, ray_direction);
-    //        out_col *= vec4(lighting, 1.0);
-    //#endif
+    while(inside_volume_bounds(sampling_pos)) {
+        float current_value = sample_data_volume(sampling_pos);
+        if (last_sampled_value < iso_value && iso_value < current_value) {
+            out_col = vec4(0.55f, 0.6f, 0.68f, 1.0f);
+            // Code snippet for TASK 3 - should be executed only when an iso-surface intersection is found
+            #if ENABLE_LIGHTING
+                vec3 gradient = calculate_gradient(sampling_pos);
+                vec3 lighting = calculate_illumination(sampling_pos, -gradient, ray_direction);
+                out_col *= vec4(lighting, 1.0);
+            #endif
+            break;
+        } else {
+            last_sampled_value = current_value;
+        }
+        sampling_pos += ray_increment;
+    }
+
+
 
     // preprocessor directives for TASK 4
     //#if ENABLE_BINARY_SEARCH
