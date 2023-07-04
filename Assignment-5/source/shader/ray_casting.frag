@@ -91,17 +91,32 @@ vec3 calculate_gradient(vec3 in_sampling_pos)
 // If 'Use pre-calculated gradients' is selected, the gradient will be sampled from a pre-calculated gradient volume
 // This function is for debugging purposes, and checking your implementation of task 3
 #if USE_GRADIENT_VOLUME
-
     vec3 obj_to_tex = vec3(1.0) / max_bounds;
     return texture(gradient_volume_texture, in_sampling_pos * obj_to_tex).xyz;
 #else
-
-
     // TASK 3: calculate the gradient (by sampling the data volume) using the central differences method
+    // Size of the volume dataset
+    const vec3 datasetSize = vec3(256.0, 256.0, 225.0);
 
-    
-    return vec3(0,0,0); // placeholder - remove in your implementation
+    // Step size (size of a voxel)
+    const vec3 stepSize = 1.0 / datasetSize;
 
+    // Calculate the gradient in each direction
+    vec3 gradient;
+    float x_forward = sample_data_volume(in_sampling_pos + vec3(stepSize.x, 0.0f, 0.0f));
+    float x_backward = sample_data_volume(in_sampling_pos - vec3(stepSize.x, 0.0f, 0.0f));
+    float x_central_diff = (x_forward - x_backward) / 2.0f * stepSize.x;
+
+    float y_forward = sample_data_volume(in_sampling_pos + vec3(0.0f, stepSize.y, 0.0f));
+    float y_backward = sample_data_volume(in_sampling_pos - vec3(0.0f, stepSize.y, 0.0f));
+    float y_central_diff = (y_forward - y_backward) / 2.0f * stepSize.y;
+
+    float z_forward = sample_data_volume(in_sampling_pos + vec3(0.0f, 0.0f, stepSize.z));
+    float z_backward = sample_data_volume(in_sampling_pos - vec3(0.0f, 0.0f, stepSize.z));
+    float z_central_diff = (z_forward - z_backward) / 2.0f * stepSize.z;
+
+    gradient = vec3(x_central_diff, y_central_diff, z_central_diff);
+    return gradient;
 
 #endif
 }
@@ -255,12 +270,18 @@ void main()
 
     while(inside_volume_bounds(sampling_pos)) {
         float current_value = sample_data_volume(sampling_pos);
+
         if (last_sampled_value < iso_value && iso_value < current_value) {
             out_col = vec4(0.55f, 0.6f, 0.68f, 1.0f);
             // Code snippet for TASK 3 - should be executed only when an iso-surface intersection is found
+            #if ENABLE_BINARY_SEARCH
+                vec3 at_position = binary_search_for_isosurface_intersection(sampling_pos - ray_increment, sampling_pos);
+            #else
+                vec3 at_position = sampling_pos;
+            #endif
             #if ENABLE_LIGHTING
-                vec3 gradient = calculate_gradient(sampling_pos);
-                vec3 lighting = calculate_illumination(sampling_pos, -gradient, ray_direction);
+                vec3 gradient = calculate_gradient(at_position);
+                vec3 lighting = calculate_illumination(at_position, -gradient, ray_direction);
                 out_col *= vec4(lighting, 1.0);
             #endif
             break;
@@ -269,21 +290,28 @@ void main()
         }
         sampling_pos += ray_increment;
     }
-
-
-
-    // preprocessor directives for TASK 4
-    //#if ENABLE_BINARY_SEARCH
-    //#endif
-
-
 #endif
 
 
 
 
 #if TASK == 5 
-    // TASK 5: first-hit iso-surface raycasting            
+    // front-to-back compostiting
+    float termination_epsilon = 0.5;
+    vec3 accumulated_intensity;
+    float accumulated_opacity;
+    while (inside_volume_bounds(sampling_pos)) {
+        float current_data_point = sample_data_volume(sampling_pos);
+        vec4 rgba = get_color_and_opacity_for_data_value_from_transfer_function(current_data_point);
+        vec3 current_intensity = rgba.xyz * rgba.w;
+        accumulated_intensity += (1 - accumulated_opacity) * current_intensity;
+        accumulated_opacity = 1 - (1 - accumulated_opacity) * (1 - rgba.w);
+        if (abs(accumulated_opacity - 1.0f) < termination_epsilon) {
+            break;
+        }
+        sampling_pos += ray_increment;
+    }
+    out_col = vec4(accumulated_intensity, accumulated_opacity);
 #endif
 
     
